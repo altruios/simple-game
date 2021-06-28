@@ -1,5 +1,16 @@
-all: compile link
-compile:
-	g++ -std=c++17 -I external/include includes ./main.cpp -o main.o
-link:
-	g++ main.o -o main -L external/lib -l sfml-graphics -l sfml-window -l sfml-system  
+OBJS=main.o Enemy.o
+
+EXE=simplegame
+LDFLAGS_BASE=-Lexternal/lib -lsfml-system -lsfml-window -lsfml-graphics 
+CXXFLAGS_BASE=-std=c++17 -Iexternal/include -Iinclude -DSFML_STATIC -c 
+
+all: $(EXE) 
+
+opt:
+	$(MAKE) -B CXXFLAGS=-O3
+
+$(EXE): $(OBJS)
+	g++ $^ -o $@ $(LDFLAGS_BASE) $(LDFLAGS)
+
+%.o: library/%.cpp
+	g++ $^ -o $@ $(CXXFLAGS_BASE) $(CXXFLAGS)

@@ -3,7 +3,7 @@
 #include <vector>
 #include <math.h>
 #include <optional>
-#include "./includes/Enemy.hpp"
+#include <Enemy.hpp>
 
 void mirror_wrap(sf::CircleShape &shape, sf::Window &w)
 {
@@ -30,7 +30,7 @@ void mirror_wrap(sf::CircleShape &shape, sf::Window &w)
 template <typename... Args>
 void print(Args &&...args)
 {
-     (std::cout << ... << args) << '\n';
+ //    (std::cout << ... << args) << '\n';
 }
 enum level_powers
 {
@@ -39,69 +39,15 @@ enum level_powers
      speed,
 };
 
-// class Enemy
-// {
-// public:
-//      sf::CircleShape shape;
-//      sf::Vector2f velocity;
-//      float speed = 1;
-//      float max_speed;
-//      float health;
-//      int id;
-//      sf::Color color;
-//      float radius;
-//      Enemy() : radius(3), color(sf::Color::Cyan), id(1), velocity(1.5f, 4.3f), max_speed(2), health(10)
-//      {
-//           this->shape.setRadius(this->radius);
-//           this->shape.setFillColor(this->color);
-//      }
-//      Enemy(float radius, sf::Color c, int id) : velocity(1.5f, 4.3f), max_speed(2), health(10)
-//      {
-//           this->shape.setRadius(radius);
-//           this->shape.setFillColor(c);
-//           this->id = id;
-//      }
-//      void take_damage(float damage)
-//      {
-//           this->health -= damage;
-//      }
-//      void set_radius(float r)
-//      {
-//           this->radius = r;
-//           this->shape.setRadius(this->radius);
-//      }
-//      bool operator==(const Enemy &e)
-//      {
-//           return e.id == this->id;
-//      }
-
-//      void move(sf::Vector2f pos_target)
-//      {
-//           //get the direction towards this positional target
-//           //normalize difference between current enemy pos, and target pos - add to vector... yes? just do it...
-//           auto position = this->shape.getPosition();
-//           auto radius = this->shape.getRadius();
-//           sf::Vector2f center{position.x + radius, position.y + radius};
-//           auto aim_dir = pos_target - center;
-//           auto aim_norm = aim_dir / float(sqrt(pow(aim_dir.x, 2) + pow(aim_dir.y, 2)));
-//           this->velocity.x = aim_norm.x + this->speed;
-//           this->velocity.y = aim_norm.y + this->speed;
-//           this->shape.setPosition(
-//               this->shape.getPosition().x + this->velocity.x,
-//               this->shape.getPosition().y + this->velocity.y);
-//           this->speed = std::min(this->speed + 1, this->max_speed);
-//      }
-// };
-
 void filter_E(std::vector<Enemy> &enemies, Enemy &e)
 {
-     std::cout << "filter_E called line count>> " << enemies.size() << std::endl;
+   //  std::cout << "filter_E called line count>> " << enemies.size() << std::endl;
      for (int i = 0; i < enemies.size(); i++)
      {
           if (!(enemies[i] == e))
           {
                enemies.erase(enemies.begin() + i);
-               std::cout << "filtered enemy!" << std::endl;
+         //      std::cout << "filtered enemy!" << std::endl;
           }
      }
 }
@@ -135,10 +81,12 @@ public:
      {
 
           this->max_health += amount / 2;
-          this->speed += amount / 2;
+          this->speed += .01;
           this->max_bullets += amount / 2;
           this->health = this->max_health;
           this->level++;
+          this->shape.setRadius(this->level);
+
      }
      void exp_gain(Enemy &e)
      {
@@ -148,7 +96,6 @@ public:
           {
                print("leveling");
                this->level_up(this->level);
-               this->shape.setRadius(this->level);
           }
           print("exp now is: ", this->experiance);
      }
@@ -175,25 +122,26 @@ public:
      {
           return bullet.id == this->id;
      }
-     Bullet(float radius, int id, float damage, int counter)
+     Bullet(float radius, int id, float damage, int counter )
      {
           this->shape.setRadius(radius);
           this->id = id;
           this->damage = damage;
           this->counter = counter;
+          this->max_speed=15;
      }
      Bullet(const Bullet &b, int i)
      {
           this->id = i;
           this->damage = 1;
-          std::cout << "copy constructor called"
-                    << "\n";
+          //std::cout << "copy constructor called"
+         //           << "\n";
      }
      void check(int max_allowed)
      {
           this->counter--;
           bool result = !(this->can_erase) ? (this->counter <= 0) : true;
-          print("result:",result);
+          //print("result:",result);
           this->can_erase = result;
      }
      void set_power(int power)
@@ -264,33 +212,33 @@ void draw(sf::RenderWindow &window, std::vector<Bullet> &bullets, std::vector<En
      for (size_t i = 0; i < enemies.size(); i++)
      {
           window.draw(enemies[i].shape);
-          print("enemy count", enemies.size());
+      //    print("enemy count", enemies.size());
      }
      for (size_t i = 0; i < bullets.size(); i++)
      {
           window.draw(bullets[i].shape);
-          print("bullet count", bullets.size());
+     //     print("bullet count", bullets.size());
      }
 }
 
 void player_controls(sf::RenderWindow &window, std::vector<Bullet> &bullets, Player &player1,int bullet_id)
 {
      //SHOOT
-     Bullet b1{1.1f, 1};
      sf::Vector2f aim_dir;
      sf::Vector2f mouse_pos_window;
      sf::Vector2f aim_dir_norm;
      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
      {
-          mouse_pos_window = sf::Vector2f(sf::Mouse::getPosition(window));
-          aim_dir = mouse_pos_window - player1.get_center();
-          aim_dir_norm = aim_dir / float(sqrt(pow(aim_dir.x, 2) + pow(aim_dir.y, 2)));
-          b1.velocity = aim_dir_norm * b1.max_speed;
-          b1.shape.setPosition(player1.get_center());
+          
           if (bullets.size() < player1.max_bullets)
           {
-               Bullet b{player1.power,  bullet_id++,  player1.power,  player1.max_bullets};
-               bullets.push_back(b);
+               mouse_pos_window = sf::Vector2f(sf::Mouse::getPosition(window));
+               aim_dir = mouse_pos_window - player1.get_center();
+               aim_dir_norm = aim_dir / float(sqrt(pow(aim_dir.x, 2) + pow(aim_dir.y, 2)));
+               Bullet b1{player1.power,  bullet_id++,  player1.power,  player1.max_bullets};
+               b1.velocity = aim_dir_norm*b1.max_speed;
+               b1.shape.setPosition(player1.get_center());
+               bullets.push_back(b1);
                bullets[bullets.size() - 1].set_power(player1.power);
           }
      }
@@ -322,10 +270,12 @@ void player_controls(sf::RenderWindow &window, std::vector<Bullet> &bullets, Pla
 void spawn_new_entites(sf::RenderWindow &window, std::vector<Bullet> &bullets, std::vector<Enemy> &enemies, Player &player1, int &enemy_id)
 {
 
-     if (enemies.size() < 10)
+     if (enemies.size() < 10000)
      {
           enemy_id++;
+          sf::Vector2f randomVector{(std::rand())%window.getSize().x-1, std::rand()%window.getSize().y-1};
           Enemy e{rand() % 29, sf::Color::Red, enemy_id};
+          e.shape.setPosition(randomVector);
           enemies.push_back(e);
      }
 }

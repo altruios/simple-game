@@ -1,5 +1,5 @@
-#include "../includes/Enemy.hpp"
-
+#include <Enemy.hpp>
+#include<math.h>
 Enemy::Enemy() : radius(3), color(sf::Color::Cyan), id(1), velocity(1.5f, 4.3f), max_speed(2), health(10)
 {
     this->shape.setRadius(this->radius);
@@ -13,7 +13,9 @@ Enemy::Enemy(float radius, sf::Color c, int id) : velocity(1.5f, 4.3f), max_spee
 }
 void Enemy::take_damage(float damage)
 {
+
     this->health -= damage;
+     this->shape.setRadius(std::min(1.f,this->shape.getRadius()-damage));
 }
 void Enemy::set_radius(float r)
 {
