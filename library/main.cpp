@@ -4,29 +4,9 @@
 #include <math.h>
 #include <optional>
 #include <Enemy.hpp>
-
-void mirror_wrap(sf::CircleShape &shape, sf::Window &w)
-{
-     auto position = shape.getPosition();
-     auto borders = w.getSize();
-     if (position.x < 0)
-     {
-          shape.setPosition(borders.x, position.y);
-     }
-     else if (position.x > borders.x)
-     {
-          shape.setPosition(0, position.y);
-     }
-     if (position.y < 0)
-     {
-          shape.setPosition(position.x, borders.y);
-     }
-     else if (position.y > borders.y)
-     {
-          shape.setPosition(position.x, 0);
-     }
-}
-
+#include <Bonus_Item.hpp>
+#include <Bullet.hpp>
+#include <Player.hpp>
 template <typename... Args>
 void print(Args &&...args)
 {
@@ -52,109 +32,6 @@ void filter_E(std::vector<Enemy> &enemies, Enemy &e)
      }
 }
 
-class Player
-{
-public:
-     sf::CircleShape shape;
-     sf::Vector2f player_center = this->shape.getPosition();
-     float speed;
-     float max_speed;
-     float health;
-     float max_health;
-     float power;
-     int level = 0;
-     int experiance = 0;
-     int max_bullets;
-     Player() : speed(1), max_speed(10.f), max_bullets(100), health(100), power(10)
-     {
-          this->shape.setRadius(4.f);
-          this->shape.setPointCount(3);
-          this->shape.setFillColor(sf::Color::Green);
-     }
-     sf::Vector2f get_center()
-     {
-          auto pos = this->shape.getPosition();
-          auto r = this->shape.getRadius();
-          return sf::Vector2f(pos.x + r, pos.y + r);
-     }
-     void level_up(auto amount)
-     {
-
-          this->max_health += amount / 2;
-          this->speed += .01;
-          this->max_bullets += amount / 2;
-          this->health = this->max_health;
-          this->level++;
-          this->shape.setRadius(this->level);
-
-     }
-     void exp_gain(Enemy &e)
-     {
-          print("e max speed", e.max_speed);
-          this->experiance = this->experiance + e.max_speed * 100;
-          if (this->experiance > this->level * 1000)
-          {
-               print("leveling");
-               this->level_up(this->level);
-          }
-          print("exp now is: ", this->experiance);
-     }
-};
-
-class Bullet
-{
-public:
-     sf::CircleShape shape;
-     sf::Vector2f velocity;
-     float max_speed;
-     int id;
-     bool can_erase;
-     int counter;
-     float damage;
-     Bullet(float radius = 5.f, int id = 0)
-         : velocity(0.f, 0.f), max_speed(15.f), damage(1)
-     {
-          this->shape.setRadius(radius);
-          this->shape.setFillColor(sf::Color::Blue);
-          this->id = id;
-     }
-     bool operator==(const Bullet &bullet)
-     {
-          return bullet.id == this->id;
-     }
-     Bullet(float radius, int id, float damage, int counter )
-     {
-          this->shape.setRadius(radius);
-          this->id = id;
-          this->damage = damage;
-          this->counter = counter;
-          this->max_speed=15;
-     }
-     Bullet(const Bullet &b, int i)
-     {
-          this->id = i;
-          this->damage = 1;
-          //std::cout << "copy constructor called"
-         //           << "\n";
-     }
-     void check(int max_allowed)
-     {
-          this->counter--;
-          bool result = !(this->can_erase) ? (this->counter <= 0) : true;
-          //print("result:",result);
-          this->can_erase = result;
-     }
-     void set_power(int power)
-     {
-          this->damage = power;
-          this->shape.setRadius(this->shape.getRadius() + power);
-     }
-     void update(sf::RenderWindow &window)
-     {
-          this->shape.move(this->velocity);
-          mirror_wrap(this->shape, window);
-     }
-};
 
 Enemy *collision_detection(Bullet v, std::vector<Enemy> &enemies)
 {
@@ -185,14 +62,28 @@ void filter_B(std::vector<Bullet> &bullets, Bullet &b)
           }
      }
 }
-
-void render_step(sf::RenderWindow &window, std::vector<Bullet> &bullets, std::vector<Enemy> &enemies, Player &player)
+Bonus_Item *collision_detection_item(Player v, Bonus_Item &b)
+{
+          auto player_pos = v.shape.getPosition();
+          auto bonus_pos = b.shape.getPosition();
+          auto bonus_radius = b.shape.getRadius();
+          auto player_radius = v.shape.getRadius();
+          auto d = player_pos - bonus_pos;
+          auto distance = (d.x * d.x) + (d.y * d.y);
+          auto radi_sum =bonus_radius + player_radius;
+          if (distance < radi_sum * radi_sum)
+          {
+               return &b;
+          }
+     
+     return nullptr; //empty case
+}
+void render_step(sf::RenderWindow &window, std::vector<Bullet> &bullets, std::vector<Enemy> &enemies, std::vector<Bonus_Item> &bonuses,Player &player)
 {
      auto player_center = player.get_center();
      for (size_t i = 0; i < bullets.size(); i++)
      {
           bullets[i].shape.move(bullets[i].velocity);
-          mirror_wrap(bullets[i].shape, window);
           Enemy *hit_target = collision_detection(bullets[i], enemies);
           if (hit_target != nullptr)
           {
@@ -200,11 +91,18 @@ void render_step(sf::RenderWindow &window, std::vector<Bullet> &bullets, std::ve
                bullets[i].can_erase = true;
           }
      }
-     for (size_t i = 0; i < enemies.size(); i++)
-     {
-          enemies[i].move(player_center);
-          mirror_wrap(enemies[i].shape, window);
+     for (size_t i = 0; i < enemies.size(); i++){
+          enemies[i].update(window,player_center);
      }
+     for(size_t i=0; i< bonuses.size();i++){
+          Bonus_Item *hit_target = collision_detection_item(player, bonuses[i]);
+          if(hit_target != nullptr){
+               player.add_bonus(*hit_target);
+               hit_target->can_erase=true;
+          }
+     }
+
+
 }
 void draw(sf::RenderWindow &window, std::vector<Bullet> &bullets, std::vector<Enemy> &enemies, Player &player1)
 {
@@ -224,50 +122,33 @@ void draw(sf::RenderWindow &window, std::vector<Bullet> &bullets, std::vector<En
 void player_controls(sf::RenderWindow &window, std::vector<Bullet> &bullets, Player &player1,int bullet_id)
 {
      //SHOOT
-     sf::Vector2f aim_dir;
-     sf::Vector2f mouse_pos_window;
-     sf::Vector2f aim_dir_norm;
+
      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
      {
+          player1.fire(bullets,window,bullet_id);
           
-          if (bullets.size() < player1.max_bullets)
-          {
-               mouse_pos_window = sf::Vector2f(sf::Mouse::getPosition(window));
-               aim_dir = mouse_pos_window - player1.get_center();
-               aim_dir_norm = aim_dir / float(sqrt(pow(aim_dir.x, 2) + pow(aim_dir.y, 2)));
-               Bullet b1{player1.power,  bullet_id++,  player1.power,  player1.max_bullets};
-               b1.velocity = aim_dir_norm*b1.max_speed;
-               b1.shape.setPosition(player1.get_center());
-               bullets.push_back(b1);
-               bullets[bullets.size() - 1].set_power(player1.power);
-          }
      }
 
      //CONTROLS
-     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-     {
-          //std::cout<<"Left"<<std::endl;
-          player1.shape.setPosition(player1.shape.getPosition().x - player1.speed, player1.shape.getPosition().y);
+     sf::Vector2f dir(0,0);
+     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
+          dir.x+=-1; dir.y+=0;
      }
-     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) || sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-     {
-          //std::cout<<"Right"<<std::endl;
-          player1.shape.setPosition(player1.shape.getPosition().x + player1.speed, player1.shape.getPosition().y);
+     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) || sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
+          dir.x+=1;dir.y+=0;
+          }
+     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
+          dir.x+=0; dir.y+=-1;
      }
-     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-     {
-          //std::cout<<"Up"<<std::endl;
-          player1.shape.setPosition(player1.shape.getPosition().x, player1.shape.getPosition().y - player1.speed);
+     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
+          dir.x+=0; dir.y+=1;
      }
-     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) || sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-     {
-          //std::cout<<"Down"<<std::endl;
-          player1.shape.setPosition(player1.shape.getPosition().x, player1.shape.getPosition().y + player1.speed);
-     }
-     mirror_wrap(player1.shape, window);
+     player1.update(window,dir);
 }
 
-void spawn_new_entites(sf::RenderWindow &window, std::vector<Bullet> &bullets, std::vector<Enemy> &enemies, Player &player1, int &enemy_id)
+
+
+void spawn_new_entites(sf::RenderWindow &window, std::vector<Bullet> &bullets, std::vector<Enemy> &enemies, std::vector<Bonus_Item> &bonuses,Player &player1, int &enemy_id, int&bonus_id)
 {
 
      if (enemies.size() < 10000)
@@ -278,6 +159,14 @@ void spawn_new_entites(sf::RenderWindow &window, std::vector<Bullet> &bullets, s
           e.shape.setPosition(randomVector);
           enemies.push_back(e);
      }
+     if (bonuses.size()<10){
+          bonus_id++;
+          sf::Vector2f randomVector{(std::rand())%window.getSize().x-1, std::rand()%window.getSize().y-1};
+          Bonus_Item item{randomVector,2, sf::Color::Yellow, bonus_id};
+          item.shape.setPosition(randomVector);
+          bonuses.push_back(item);
+     }
+
 }
 
 void cleanup(std::vector<Bullet> &bullets, std::vector<Enemy> &enemies, Player &player1)
@@ -303,13 +192,16 @@ void cleanup(std::vector<Bullet> &bullets, std::vector<Enemy> &enemies, Player &
 int main()
 {
      sf::RenderWindow window(sf::VideoMode(2000, 2000), "hello world");
-     window.setFramerateLimit(60);
-     int bullet_count = 0;
-     int enemy_id = 0;
-     // Create a graphical text to display
      sf::Vector2i center_window((sf::VideoMode::getDesktopMode().width / 2) - 45, (sf::VideoMode::getDesktopMode().height / 2) - 45);
+     window.setFramerateLimit(60);
      Player player1;
      player1.shape.setPosition(center_window.x, center_window.y);
+
+
+     int bullet_count = 0;
+     int enemy_id = 0;
+     int bonus_id=0;
+     // Create a graphical text to display
      Enemy enemy1{};
      std::vector<Enemy> enemies;
 
@@ -319,6 +211,7 @@ int main()
      enemies.push_back(enemy1);
      std::vector<Bullet> bullets;
      std::vector<Player> players;
+     std::vector<Bonus_Item> bonuses;
      players.push_back(player1);
      while (window.isOpen())
      {
@@ -335,7 +228,7 @@ int main()
           player_controls(window, bullets, player1,bullet_count);
 
           //MOVEMENT AND COLLISION DETECTION
-          render_step(window, bullets, enemies, player1);
+          render_step(window, bullets, enemies, bonuses,player1);
 
           //DRAW
           draw(window, bullets, enemies, player1);
@@ -344,7 +237,7 @@ int main()
           cleanup(bullets, enemies, player1);
 
           window.display();
-          spawn_new_entites(window, bullets, enemies, player1, enemy_id);
+          spawn_new_entites(window, bullets, enemies, bonuses,player1, enemy_id,bonus_id);
           print("level", player1.level, "bp:", player1.power, " s:", player1.speed);
      }
 

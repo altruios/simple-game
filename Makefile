@@ -1,4 +1,4 @@
-OBJS=main.o Enemy.o
+OBJS=main.o Enemy.o Bonus_Item.o Bullet.o Player.o
 
 EXE=simplegame
 LDFLAGS_BASE=-Lexternal/lib -lsfml-system -lsfml-window -lsfml-graphics 
