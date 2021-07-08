@@ -11,12 +11,13 @@
           auto r = this->shape.getRadius();
           return sf::Vector2f(pos.x + r, pos.y + r);
      }
-     void Player::level_up(auto amount)
+     void Player::level_up(int amount)
      {
 
           this->max_health += amount / 2;
           this->speed += .01;
           this->max_bullets += amount / 2;
+          this->power+=1;
           this->health = this->max_health;
           this->level++;
           this->shape.setRadius(this->level);

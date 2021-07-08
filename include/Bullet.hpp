@@ -19,6 +19,8 @@ class Bullet{
      Bullet(const Bullet &b, int i);
      void check(int max_allowed);
      void set_power(int power);
+     int get_power();
+     void set_color(int power);
      void update(sf::RenderWindow &window);
      void mirror_wrap(sf::RenderWindow &window);
 };

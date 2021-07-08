@@ -23,7 +23,7 @@ public:
      int max_bullets;
      Player();
      sf::Vector2f get_center();
-     void level_up(auto amount);
+     void level_up(int amount);
      void exp_gain(Enemy &e);
      void add_bonus(Bonus_Item &b);
      void move(sf::Vector2f dir);

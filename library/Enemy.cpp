@@ -30,8 +30,8 @@ void Enemy::move(sf::Vector2f pos_target){
     sf::Vector2f center{position.x + radius, position.y + radius};
     auto aim_dir = pos_target - center;
     auto aim_norm = aim_dir / float(sqrt(pow(aim_dir.x, 2) + pow(aim_dir.y, 2)));
-    this->velocity.x = aim_norm.x + this->speed;
-    this->velocity.y = aim_norm.y + this->speed;
+    this->velocity.x = aim_norm.x * this->speed;
+    this->velocity.y = aim_norm.y * this->speed;
     this->shape.setPosition(
         this->shape.getPosition().x + this->velocity.x,
         this->shape.getPosition().y + this->velocity.y

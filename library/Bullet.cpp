@@ -29,14 +29,31 @@ Bullet::Bullet(const Bullet &b, int i)
      void Bullet::check(int max_allowed)
      {
           this->counter--;
-          bool result = !(this->can_erase) ? (this->counter <= 0) : true;
+          bool result = !(this->can_erase) ? (this->counter <= 0):true;
           //print("result:",result);
           this->can_erase = result;
+     }
+     int Bullet::get_power(){
+          return this->damage;
      }
      void Bullet::set_power(int power)
      {
           this->damage = power;
-          this->shape.setRadius(this->shape.getRadius() + power);
+          this->set_color(power);
+     }
+
+     void Bullet::set_color( int const color){
+          if(color<100){this->shape.setFillColor(sf::Color::Blue);}
+          if(color<90){this->shape.setFillColor(sf::Color::Green);}
+          if(color<80){this->shape.setFillColor(sf::Color::Magenta);}
+          if(color<70){this->shape.setFillColor(sf::Color::Yellow);}
+          if(color<60){this->shape.setFillColor(sf::Color::White);}
+          if(color<50){this->shape.setFillColor(sf::Color::Cyan);}
+          if(color<40){this->shape.setFillColor(sf::Color(255,0,155,255 ));}
+          if(color<30){this->shape.setFillColor(sf::Color(155,0,155,255 ));}
+          if(color<20){this->shape.setFillColor(sf::Color(155,0,55,255  ));}
+          if(color<10){this->shape.setFillColor(sf::Color(55,0,55,255   ));}
+          
      }
      void Bullet::update(sf::RenderWindow &window)
      {
